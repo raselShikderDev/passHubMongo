@@ -10,23 +10,24 @@ import PasswordList from "./PasswordList";
 const Hero = () => {
   const [showPass, setShowPass] = useState(true);
   const [arryPasss, setArryPasss] = useState([]);
-  const [showBtnText, setShowBtnText] = useState(true)
+  const [showBtnText, setShowBtnText] = useState(true);
   const [formValue, setFormValue] = useState({
     websiteURL: "",
     username: "",
     password: "",
+    id: ""
   });
   // Getting Passsword by Get request from MongoDb server
 
   const getPasswords = async () => {
-    let req = await fetch("http://localhost:3000/")
-     if (!req.ok) {
+    let req = await fetch("http://localhost:3000/");
+    if (!req.ok) {
       throw new Error(`HTTP error! status: ${req.status}`);
     }
     try {
-      let password = await req.json()
+      let password = await req.json();
       console.log(password);
-      
+
       if (password) {
         setArryPasss(password);
       }
@@ -34,10 +35,10 @@ const Hero = () => {
       console.error(`Data fetching faild: ${error}`);
       setArryPasss([]);
     }
-  }
+  };
 
   useEffect(() => {
-    getPasswords()
+    getPasswords();
   }, []);
 
   // Handling Password show and hide button
@@ -52,34 +53,64 @@ const Hero = () => {
 
   // Handling From Submit Button
   const handleFormSubmitBtn = async (e) => {
-    
     e.preventDefault();
     if (!showBtnText) {
       toast("Succesfully Updated ", {
-      position: "top-right",
-      autoClose: 1000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      progress: undefined,
-      theme: "light",
+        position: "top-right",
+        autoClose: 1000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
       });
       setShowBtnText(true);
     } else {
       toast("Added Succesfully", {
-      position: "top-right",
-      autoClose: 1000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      progress: undefined,
-      theme: "light",
+        position: "top-right",
+        autoClose: 1000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
       });
     }
-    let res = await fetch("http://localhost:3000/", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(formValue) })
-    let data = await res.json()
+
+    // if such id match then delete _ for updateing array after edit action
+    if (!showBtnText || formValue.id) {
+      try {
+      let res = await fetch(`http://localhost:3000/passwords/${formValue.id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      let data = await res.json();
+      if (Array.isArray(data)) {
+        // Ensure response is an array
+        setArryPasss(data);
+      } else {
+        console.error("Unexpected response format:", data);
+        throw new Error("Invalid server response");
+      }
+    } catch (error) {
+      console.error(`Failed to remove item: ${error}`);
+    }
+    } else {
+      console.error(`faild to Old Data : ${formValue.id}`)
+    }
+
+
+    let res = await fetch("http://localhost:3000/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formValue),
+    });
+    let data = await res.json();
     setArryPasss((prev) => {
       const updatedPasswords = [...prev, data];
       return updatedPasswords;
@@ -90,7 +121,6 @@ const Hero = () => {
       username: "",
       password: "",
     });
-
   };
 
   // Handling Delete Button
@@ -106,12 +136,21 @@ const Hero = () => {
       theme: "light",
     });
     try {
-      let res = await fetch(`http://localhost:3000/${id}`, { method: "DELETE", headers: { "Content-Type": "application/json" } })
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
-    }
-    let data = await res.json()
-    setArryPasss(data);
+      let res = await fetch(`http://localhost:3000/passwords/${id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      let data = await res.json();
+      if (Array.isArray(data)) {
+        // Ensure response is an array
+        setArryPasss(data);
+      } else {
+        console.error("Unexpected response format:", data);
+        throw new Error("Invalid server response");
+      }
     } catch (error) {
       console.error(`Failed to remove item: ${error}`);
     }
@@ -119,29 +158,34 @@ const Hero = () => {
 
   // Handling Edit Button
   const EditItem = (id) => {
-   setShowBtnText(false);
+    setShowBtnText(false);
     if (showBtnText) {
       toast("Editing One Item", {
-      position: "top-right",
-      autoClose: 2000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      progress: undefined,
-      theme: "light",
-    });
-    } 
+        position: "top-right",
+        autoClose: 2000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
+      });
+    }
+
+    const itemToEdit = arryPasss.find((item) => item._id === id);
+    if (itemToEdit) {
+      setFormValue({
+        websiteURL: itemToEdit.websiteURL || "",
+        username: itemToEdit.username || "",
+        password: itemToEdit.password || "",
+        id: itemToEdit._id || "",
+      });
+      setArryPasss((prev) => prev.filter((item) => item._id !== id))
+    } else {
+      console.error(`${id} not found for delete`);
+    }
+  }
     
-    setFormValue(() => {
-      const updatedarryPass = arryPasss.filter((item) => item.id === id)[0];
-      return updatedarryPass;
-    });
-    setArryPasss((prev) => {
-      const updatedarryPass = prev.filter((item) => item.id !== id);
-      return updatedarryPass;
-    });
-  };
 
   // Handling Copy Button
   const copyText = (text) => {
@@ -172,7 +216,6 @@ const Hero = () => {
         });
       });
   };
-
 
   return (
     <section className="font-mono py-10 pt-20">
