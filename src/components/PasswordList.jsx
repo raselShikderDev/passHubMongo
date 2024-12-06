@@ -1,10 +1,19 @@
 /* eslint-disable react/prop-types */
 import { MdContentCopy, MdDeleteForever } from "react-icons/md";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { FaRegEdit } from "react-icons/fa";
 import "react-toastify/dist/ReactToastify.css";
+import { useState } from "react";
 
 const PasswordList = ({ arryPasss, removeItem, EditItem, copyText }) => {
-  
+  const [showPassText, setShowPassText] = useState({})
+
+  const togglePassShowBtn = (id) => {
+    setShowPassText((prev) => ({
+      ...prev, [id]: !prev[id]
+    }))
+  }
+
   return (
     <section className="pt-10 w-full sm:w-[96%] mx-auto">
       
@@ -58,13 +67,21 @@ const PasswordList = ({ arryPasss, removeItem, EditItem, copyText }) => {
                     </td>
                     <td className="bg-green-100 border border-white py-2 px-2">
                       <div className="flex justify-between items-center">
-                        <p className="overflow-x-scroll web-cell">{password}</p>
-                        <button
+                        <p className="overflow-x-scroll web-cell">{showPassText[_id] ? password: "*".repeat(password.length)}</p>
+                          <div className="space-x-3">
+                            <button
+                          className="cursor-pointer group"
+                          onClick={()=> togglePassShowBtn(item._id)}
+                        >
+                          {showPassText[_id] ? <FaEye className="text-gray-600 text-sm group-active:scale-110" /> : <FaEyeSlash className="text-gray-600 text-sm group-active:scale-110" />}
+                        </button>
+                            <button
                           className="cursor-pointer group"
                           onClick={() => copyText(item.password)}
                         >
                           <MdContentCopy className="group-active:scale-110" />
                         </button>
+                        </div>
                       </div>
                     </td>
                     <td className="bg-green-100 border text-center  border-white py-2 px-2">
